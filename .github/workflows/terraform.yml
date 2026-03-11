@@ -40,6 +40,10 @@ jobs:
   plan_apply:
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch'
+    env:
+      TF_VAR_project_id: chas-devsecops-2026
+      TF_VAR_region: europe-north1
+      TF_VAR_student_id: andre
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
@@ -50,6 +54,6 @@ jobs:
       - name: Terraform Init
         run: terraform init
       - name: Terraform Plan
-        run: terraform plan -out=tfplan
+        run: terraform plan -input=false -out=tfplan
       - name: Terraform Apply
-        run: terraform apply -auto-approve tfplan
+        run: terraform apply -input=false -auto-approve tfplan
