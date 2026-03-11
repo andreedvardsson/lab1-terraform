@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      run_apply:
+        description: "Run terraform apply (requires careful state handling)"
+        required: false
+        default: "false"
 
 jobs:
   lint:
@@ -57,4 +62,5 @@ jobs:
       - name: Terraform Plan
         run: terraform plan -input=false -out=tfplan
       - name: Terraform Apply
+        if: ${{ github.event.inputs.run_apply == 'true' }}
         run: terraform apply -input=false -auto-approve tfplan
