@@ -23,7 +23,7 @@ Workflow: `Terraform CI`
 ![Pipeline Success](docs/screenshots/pipeline-success.png)
 
 ## GCP VM
-Den skapade VM:n heter `${student_id}-lab1-vm` i zon `europe-north1-a`.
+Den skapade VM:n heter `${student_id}-lab1-vm` i zon `europe-north1-b`.
 
 ### Screenshot - VM i GCP Console
 ![GCP VM](docs/screenshots/gcp-vm.png)
