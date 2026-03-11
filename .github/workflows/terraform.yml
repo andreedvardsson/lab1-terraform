@@ -43,6 +43,7 @@ jobs:
     env:
       TF_VAR_project_id: chas-devsecops-2026
       TF_VAR_region: europe-north1
+      TF_VAR_zone: europe-north1-b
       TF_VAR_student_id: andre
     steps:
       - uses: actions/checkout@v4

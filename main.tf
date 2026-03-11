@@ -15,7 +15,7 @@ provider "google" {
 resource "google_compute_instance" "vm" {
   name         = "${var.student_id}-lab1-vm"
   machine_type = "e2-micro"
-  zone         = "${var.region}-a"
+  zone         = var.zone
 
   boot_disk {
     initialize_params {
@@ -62,5 +62,5 @@ resource "google_compute_resource_policy" "daily_backup" {
 resource "google_compute_disk_resource_policy_attachment" "backup_attachment" {
   name = google_compute_resource_policy.daily_backup.name
   disk = google_compute_instance.vm.name
-  zone = "${var.region}-a"
+  zone = var.zone
 }
