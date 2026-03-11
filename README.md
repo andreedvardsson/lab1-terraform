@@ -32,21 +32,6 @@ Lägg in screenshot här efter att VM skapats:
 
 ![GCP VM](docs/screenshots/gcp-vm.png)
 
-## Blocker vid VM-skapande
-Status per 2026-03-11: `terraform apply` stoppas av GCP IAM `403 Forbidden` i projekt `chas-devsecops-2026`.
-
-Saknade rättigheter enligt felmeddelandet:
-- `compute.instances.create`
-- `compute.disks.create`
-- `compute.subnetworks.use`
-- `compute.subnetworks.useExternalIp`
-- `compute.instances.setMetadata`
-- `compute.instances.setTags`
-- `compute.instances.setLabels`
-- `compute.resourcePolicies.create`
-
-Slutsats: Terraform-konfigurationen validerar och planerar korrekt, men VM-resursen kan inte provisioneras förrän nödvändiga IAM-roller är tilldelade.
-
 ## Säkerhetsbeslut
 - `ufw`: aktiveras för att default-neka inkommande trafik och minimera attackytan.
 - `fail2ban`: skyddar mot brute-force genom att blockera upprepade misslyckade inloggningar.
