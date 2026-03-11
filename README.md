@@ -20,16 +20,12 @@ Workflow: `Terraform CI`
 - `validate`: `terraform init -backend=false` + `terraform validate`
 
 ### Screenshot - pipeline (grön)
-Lägg in screenshot här efter inlämning/uppdatering:
-
 ![Pipeline Success](docs/screenshots/pipeline-success.png)
 
 ## GCP VM
 Den skapade VM:n heter `${student_id}-lab1-vm` i zon `europe-north1-a`.
 
 ### Screenshot - VM i GCP Console
-Lägg in screenshot här efter att VM skapats:
-
 ![GCP VM](docs/screenshots/gcp-vm.png)
 
 ## Säkerhetsbeslut
