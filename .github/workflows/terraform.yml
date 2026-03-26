@@ -57,10 +57,40 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
-      - name: Authenticate to GCP
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      - name: Prepare GCP credentials
+        shell: bash
+        env:
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64
+          import json
+          import os
+          from pathlib import Path
+
+          raw = os.environ.get("GCP_SA_KEY", "").strip()
+          if not raw:
+              raise SystemExit("GCP_SA_KEY secret is empty")
+
+          def validate_and_write(payload: str) -> None:
+              data = json.loads(payload)
+              for required in ("type", "client_email", "private_key"):
+                  if required not in data or not data[required]:
+                      raise SystemExit(f"Missing required key in credentials JSON: {required}")
+              if "\\n" in data["private_key"]:
+                  data["private_key"] = data["private_key"].replace("\\n", "\n")
+              out = Path(os.environ["RUNNER_TEMP"]) / "gcp-sa-key.json"
+              out.write_text(json.dumps(data), encoding="utf-8")
+              print(f"Credentials file created at: {out}")
+
+          try:
+              validate_and_write(raw)
+          except Exception:
+              decoded = base64.b64decode(raw).decode("utf-8")
+              validate_and_write(decoded)
+          PY
+          echo "GOOGLE_APPLICATION_CREDENTIALS=${RUNNER_TEMP}/gcp-sa-key.json" >> "${GITHUB_ENV}"
       - name: Terraform Init
         run: terraform init -input=false
       - name: Terraform Plan
