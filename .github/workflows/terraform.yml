@@ -111,6 +111,24 @@ jobs:
                   print(f"Base64 parse error: {b64_err}", file=sys.stderr)
                   raise SystemExit(1)
           PY
+          python3 - <<'PY'
+          import json
+          import os
+          import subprocess
+          import tempfile
+          from pathlib import Path
+
+          cred_path = Path(os.environ["RUNNER_TEMP"]) / "gcp-sa-key.json"
+          data = json.loads(cred_path.read_text(encoding="utf-8"))
+          with tempfile.NamedTemporaryFile("w", delete=False, suffix=".pem") as tmp:
+              tmp.write(data["private_key"])
+              key_path = tmp.name
+          pub = subprocess.check_output(["openssl", "pkey", "-in", key_path, "-pubout"], text=True)
+          fp = subprocess.check_output(["openssl", "dgst", "-sha256"], input=pub, text=True).strip()
+          print(f"Credential client_email: {data['client_email']}")
+          print(f"Credential public key fingerprint: {fp}")
+          os.unlink(key_path)
+          PY
           echo "GOOGLE_APPLICATION_CREDENTIALS=${RUNNER_TEMP}/gcp-sa-key.json" >> "${GITHUB_ENV}"
       - name: Terraform Init
         shell: bash
