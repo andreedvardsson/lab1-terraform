@@ -67,7 +67,9 @@ jobs:
           import base64
           import json
           import os
+          import subprocess
           import sys
+          import tempfile
           from pathlib import Path
 
           raw = os.environ.get("GCP_SA_KEY", "")
@@ -92,6 +94,25 @@ jobs:
               data["private_key"] = data["private_key"].replace("\r", "").strip() + "\n"
               if "BEGIN PRIVATE KEY" not in data["private_key"] or "END PRIVATE KEY" not in data["private_key"]:
                   raise SystemExit("private_key field is present but not in expected PEM format")
+              # Convert PKCS#8 -> PKCS#1 to avoid backend parser incompatibility in some Terraform/GCS auth paths.
+              with tempfile.NamedTemporaryFile("w", delete=False, suffix=".pem") as src:
+                  src.write(data["private_key"])
+                  src_path = src.name
+              with tempfile.NamedTemporaryFile("w", delete=False, suffix=".pem") as dst:
+                  dst_path = dst.name
+              try:
+                  subprocess.check_call(
+                      ["openssl", "rsa", "-in", src_path, "-out", dst_path],
+                      stdout=subprocess.DEVNULL,
+                      stderr=subprocess.DEVNULL,
+                  )
+                  converted = Path(dst_path).read_text(encoding="utf-8").strip() + "\n"
+                  if "BEGIN RSA PRIVATE KEY" not in converted:
+                      raise SystemExit("Could not convert private key to RSA PRIVATE KEY format")
+                  data["private_key"] = converted
+              finally:
+                  Path(src_path).unlink(missing_ok=True)
+                  Path(dst_path).unlink(missing_ok=True)
               out = Path(os.environ["RUNNER_TEMP"]) / "gcp-sa-key.json"
               out.write_text(json.dumps(data), encoding="utf-8")
               print(f"Credentials file created at: {out} for {data['client_email']}")
