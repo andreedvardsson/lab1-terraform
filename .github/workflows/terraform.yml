@@ -67,9 +67,11 @@ jobs:
           import base64
           import json
           import os
+          import sys
           from pathlib import Path
 
-          raw = os.environ.get("GCP_SA_KEY", "").strip()
+          raw = os.environ.get("GCP_SA_KEY", "")
+          raw = raw.strip().strip('"').strip("'").strip("`")
           if not raw:
               raise SystemExit("GCP_SA_KEY secret is empty")
 
@@ -80,15 +82,24 @@ jobs:
                       raise SystemExit(f"Missing required key in credentials JSON: {required}")
               if "\\n" in data["private_key"]:
                   data["private_key"] = data["private_key"].replace("\\n", "\n")
+              if "BEGIN PRIVATE KEY" not in data["private_key"] or "END PRIVATE KEY" not in data["private_key"]:
+                  raise SystemExit("private_key field is present but not in expected PEM format")
               out = Path(os.environ["RUNNER_TEMP"]) / "gcp-sa-key.json"
               out.write_text(json.dumps(data), encoding="utf-8")
-              print(f"Credentials file created at: {out}")
+              print(f"Credentials file created at: {out} for {data['client_email']}")
 
           try:
               validate_and_write(raw)
-          except Exception:
-              decoded = base64.b64decode(raw).decode("utf-8")
-              validate_and_write(decoded)
+          except Exception as raw_err:
+              try:
+                  padded = raw + "=" * (-len(raw) % 4)
+                  decoded = base64.b64decode(padded).decode("utf-8-sig")
+                  validate_and_write(decoded)
+              except Exception as b64_err:
+                  print("Failed to parse GCP_SA_KEY as raw JSON or base64(JSON).", file=sys.stderr)
+                  print(f"Raw JSON parse error: {raw_err}", file=sys.stderr)
+                  print(f"Base64 parse error: {b64_err}", file=sys.stderr)
+                  raise SystemExit(1)
           PY
           echo "GOOGLE_APPLICATION_CREDENTIALS=${RUNNER_TEMP}/gcp-sa-key.json" >> "${GITHUB_ENV}"
       - name: Terraform Init
