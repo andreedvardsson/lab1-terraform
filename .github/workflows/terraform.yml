@@ -80,11 +80,16 @@ jobs:
 
           def validate_and_write(payload: str) -> None:
               data = json.loads(payload)
+              if data.get("type") != "service_account":
+                  raise SystemExit(f"Expected service_account key, got: {data.get('type')!r}")
               for required in ("type", "client_email", "private_key"):
                   if required not in data or not data[required]:
                       raise SystemExit(f"Missing required key in credentials JSON: {required}")
               if "\\n" in data["private_key"]:
                   data["private_key"] = data["private_key"].replace("\\n", "\n")
+              if "\\r" in data["private_key"]:
+                  data["private_key"] = data["private_key"].replace("\\r", "")
+              data["private_key"] = data["private_key"].replace("\r", "").strip() + "\n"
               if "BEGIN PRIVATE KEY" not in data["private_key"] or "END PRIVATE KEY" not in data["private_key"]:
                   raise SystemExit("private_key field is present but not in expected PEM format")
               out = Path(os.environ["RUNNER_TEMP"]) / "gcp-sa-key.json"
@@ -111,7 +116,9 @@ jobs:
         shell: bash
         run: |
           set +e
-          terraform init -input=false > tfinit.log 2>&1
+          unset GOOGLE_CREDENTIALS
+          unset GOOGLE_BACKEND_CREDENTIALS
+          terraform init -input=false -backend-config="credentials=${GOOGLE_APPLICATION_CREDENTIALS}" > tfinit.log 2>&1
           status=$?
           cat tfinit.log
           if [ "${status}" -ne 0 ]; then
