@@ -108,7 +108,21 @@ jobs:
           PY
           echo "GOOGLE_APPLICATION_CREDENTIALS=${RUNNER_TEMP}/gcp-sa-key.json" >> "${GITHUB_ENV}"
       - name: Terraform Init
-        run: terraform init -input=false
+        shell: bash
+        run: |
+          set +e
+          terraform init -input=false > tfinit.log 2>&1
+          status=$?
+          cat tfinit.log
+          if [ "${status}" -ne 0 ]; then
+            reason="$(grep -m1 -E 'Error:|forbidden|permission|denied|failed' tfinit.log || true)"
+            if [ -n "${reason}" ]; then
+              echo "::error::Terraform init failed: ${reason}"
+            else
+              echo "::error::Terraform init failed (see log output above)."
+            fi
+            exit "${status}"
+          fi
       - name: Terraform Plan
         run: terraform plan -input=false -out=tfplan
       - name: Terraform Apply
