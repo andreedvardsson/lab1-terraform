@@ -1,6 +1,6 @@
 terraform {
   backend "gcs" {
-    bucket = "chas-tf-state-DITT-TEAM"
+    bucket = "chas-tf-state-lillteamet"
     prefix = "lab1/andre"
   }
 
