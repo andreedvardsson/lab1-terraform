@@ -1,4 +1,9 @@
 terraform {
+  backend "gcs" {
+    bucket = "chas-tf-state-DITT-TEAM"
+    prefix = "lab1/andre"
+  }
+
   required_providers {
     google = {
       source  = "hashicorp/google"
