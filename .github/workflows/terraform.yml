@@ -60,7 +60,7 @@ jobs:
       - name: Prepare GCP credentials
         shell: bash
         env:
-          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY || vars.GCP_SA_KEY }}
         run: |
           set -euo pipefail
           python3 - <<'PY'
@@ -72,8 +72,11 @@ jobs:
 
           raw = os.environ.get("GCP_SA_KEY", "")
           raw = raw.strip().strip('"').strip("'").strip("`")
+          print(f"GCP_SA_KEY length: {len(raw)}")
+          if raw:
+              print(f"GCP_SA_KEY starts with: {raw[:1]!r}")
           if not raw:
-              raise SystemExit("GCP_SA_KEY secret is empty")
+              raise SystemExit("GCP_SA_KEY is empty (check Actions Secret/Variable name and value)")
 
           def validate_and_write(payload: str) -> None:
               data = json.loads(payload)
@@ -97,6 +100,8 @@ jobs:
                   validate_and_write(decoded)
               except Exception as b64_err:
                   print("Failed to parse GCP_SA_KEY as raw JSON or base64(JSON).", file=sys.stderr)
+                  if raw.startswith("/") or raw.startswith("./"):
+                      print("GCP_SA_KEY looks like a file path. Store file CONTENT, not file path.", file=sys.stderr)
                   print(f"Raw JSON parse error: {raw_err}", file=sys.stderr)
                   print(f"Base64 parse error: {b64_err}", file=sys.stderr)
                   raise SystemExit(1)
