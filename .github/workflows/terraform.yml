@@ -60,7 +60,7 @@ jobs:
       - name: Prepare GCP credentials
         shell: bash
         env:
-          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY || vars.GCP_SA_KEY }}
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
         run: |
           set -euo pipefail
           python3 - <<'PY'
